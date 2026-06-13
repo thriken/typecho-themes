@@ -1,0 +1,26 @@
+/**
+ * 404页面错误样式（追加到 main.css 或单独引用）
+ * 已集成于 main.css 的 .empty-state，这里是 404 专用样式
+ */
+.error-page {
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.error-page__icon { margin: 0 auto var(--space-lg); }
+.error-page__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary-900);
+  margin: 0 0 var(--space-sm);
+}
+.error-page__desc {
+  color: var(--text-muted);
+  margin: 0 0 var(--space-xl);
+}
+.error-page__actions { margin-bottom: var(--space-xl); }
+.error-page__search { border-top: 1px dashed var(--border-color); padding-top: var(--space-xl); }
+.error-search-form { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px; }
