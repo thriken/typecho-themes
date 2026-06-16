@@ -47,7 +47,7 @@
 
 ### 6. maupassant-X · 响应式主题
 
-响应式主题，原项目 [cho/maupassant](https://github.com/pickcho/maupassant)。
+响应式主题，原项目 [cho/maupassant](https://github.com/pickcho/maupassant)。 
 
 ![maupassant-X](maupassant-X/screenshot.png)
 
@@ -57,7 +57,7 @@
 
 > Born to be the Miracles.
 
-原主题发布于几年前，作者 [Eltrac](https://guhub.cn)，此版本有修改。
+原主题发布于几年前，作者 [Eltrac](https://guhub.cn)  |  [github](https://github.com/BigCoke233/miracles/)，此版本有修改。
 
 ![Miracles](Miracles/screenshot.png)
 
@@ -76,6 +76,14 @@
 基于 sanoui 风格设计的 Typecho 主题。
 
 ![SanoBlog](SanoBlog/screenshot.png)
+
+---
+
+### 10. CoderBlog · 程序员博客主题 <sup>原创</sup>
+
+面向开发者的双栏博客主题。Tailwind CSS + Font Awesome，Prism.js 代码高亮，支持短代码（video/audio/file/quote/ref）、暗色模式、LightboX 灯箱插件。
+
+![CoderBlog](CoderBlog/screenshot.png)
 
 ---
 
