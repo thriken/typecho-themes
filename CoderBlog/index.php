@@ -1,11 +1,13 @@
 ﻿<?php
 /**
  * CoderBlog - 程序员博客主题
- *
+ * > 平台：Typecho 1.3 | PHP 7.4 ~ 8.4 | UI：Tailwind CSS + Font Awesome
+ * 面向开发者与极客的双栏博客主题，支持代码高亮、短代码、暗色模式。
+ * <a href="" _target="blank">查看文档</a>
  * @package CoderBlog
  * @author thriken
  * @version 1.0
- * @link http://blog.elec.top/
+ * @link https://blog.elec.top/
  */
  
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
