@@ -3,6 +3,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 function themeConfig($form)
 {
+    // ---- 站点设置 ----
     $logoUrl = new \Typecho\Widget\Helper\Form\Element\Text(
         'logoUrl',
         null,
@@ -10,9 +11,51 @@ function themeConfig($form)
         _t('站点 LOGO 地址'),
         _t('在这里填入一个图片 URL 地址, 以在网站标题前加上一个 LOGO')
     );
-
     $form->addInput($logoUrl->addRule('url', _t('请填写一个合法的URL地址')));
 
+    // ---- 首页模块：三栏分类 ----
+    $homeCol3Cats = new \Typecho\Widget\Helper\Form\Element\Text(
+        'homeCol3Cats',
+        null,
+        null,
+        _t('首页三栏分类'),
+        _t('填写分类ID（mid），多个用英文逗号分隔。如：1,2,3。每个分类取最新3篇文章，以三列网格展示。')
+    );
+    $form->addInput($homeCol3Cats);
+
+    // ---- 首页模块：政策/单栏分类（可多个） ----
+    $homeCol1Cats = new \Typecho\Widget\Helper\Form\Element\Text(
+        'homeCol1Cats',
+        null,
+        null,
+        _t('首页单栏分类'),
+        _t('填写分类ID（mid），多个用英文逗号分隔。如：4,5。每个分类独占一行，以卡片形式展示最新3篇文章。')
+    );
+    $form->addInput($homeCol1Cats);
+
+    // ---- 底部栏位 1-3 ----
+    for ($i = 1; $i <= 3; $i++) {
+        $footerCol = new \Typecho\Widget\Helper\Form\Element\Textarea(
+            'footerCol' . $i,
+            null,
+            null,
+            _t('底部第' . $i . '栏'),
+            _t('每行一条链接，格式：链接名称|链接URL。例如：中国政府网|https://www.gov.cn')
+        );
+        $form->addInput($footerCol);
+    }
+
+    // ---- 底部联系我们 ----
+    $footerContact = new \Typecho\Widget\Helper\Form\Element\Textarea(
+        'footerContact',
+        null,
+        null,
+        _t('底部联系信息'),
+        _t('每行一条信息，直接填写文本。例如：地址：XX市XX县行政中心大楼')
+    );
+    $form->addInput($footerContact);
+
+    // ---- 侧边栏设置 ----
     $sidebarBlock = new \Typecho\Widget\Helper\Form\Element\Checkbox(
         'sidebarBlock',
         [
@@ -25,7 +68,6 @@ function themeConfig($form)
         ['ShowRecentPosts', 'ShowRecentComments', 'ShowCategory', 'ShowArchive', 'ShowOther'],
         _t('侧边栏显示')
     );
-
     $form->addInput($sidebarBlock->multiMode());
 }
 
@@ -135,27 +177,19 @@ function getHierarchicalCategories()
     // 重置指针
     $categories->reset();
     
-    // 构建层级结构
-    $hierarchical = [];
-    
-    // 首先获取所有顶级分类
+    // 按 parent 建立索引 → O(n)
+    $byParent = [];
     foreach ($allCategories as $cat) {
-        if ($cat['parent'] == 0) {
-            $topCat = $cat;
-            $children = [];
-            
-            // 查找该顶级分类的子分类
-            foreach ($allCategories as $childCat) {
-                if ($childCat['parent'] == $topCat['mid']) {
-                    $children[] = $childCat;
-                }
-            }
-            
-            $hierarchical[] = [
-                'category' => $topCat,
-                'children' => $children
-            ];
-        }
+        $byParent[$cat['parent']][] = $cat;
+    }
+
+    // 构建层级：顶级分类 + 其子分类
+    $hierarchical = [];
+    foreach ($byParent[0] as $topCat) {
+        $hierarchical[] = [
+            'category' => $topCat,
+            'children' => $byParent[$topCat['mid']] ?? []
+        ];
     }
     
     return $hierarchical;
@@ -257,123 +291,165 @@ function getPostsByCategoryId($categoryId, $limit = 10, $offset = 0, $orderBy = 
     }
     
     try {
-        // 创建查询参数
-        $params = [
-            'category' => $categoryId,
-            'pageSize' => $limit,
-            'page' => floor($offset / $limit) + 1,
-            'type' => 'post',
-            'status' => 'publish'
-        ];
+        $db = \Typecho\Db::get();
+        $options = \Typecho\Widget::widget('Widget_Options');
         
-        // 设置排序
-        if ($orderBy === 'created') {
-            $params['order'] = $order;
-        } elseif ($orderBy === 'modified') {
-            $params['order'] = $order;
-            //$params['sort'] = 'modified';
+        // 获取分类信息
+        $cat = $db->fetchRow(
+            $db->select()->from('table.metas')
+                ->where('mid = ? AND type = ?', $categoryId, 'category')
+        );
+        if (!$cat) {
+            return [];
+        }
+        
+        // 递归收集本分类及所有子分类ID
+        $stack = [$categoryId];
+        $visited = [];
+        while ($stack) {
+            $cur = array_pop($stack);
+            if (in_array($cur, $visited)) continue;
+            $visited[] = $cur;
+            $rows = $db->fetchAll(
+                $db->select('mid')->from('table.metas')
+                    ->where('parent = ? AND type = ?', $cur, 'category')
+            );
+            foreach ($rows as $r) {
+                $stack[] = (int)$r['mid'];
+            }
+        }
+        $allMids = array_unique($visited);
+        
+        // 排序字段映射
+        $orderField = 'table.contents.created';
+        if ($orderBy === 'modified') {
+            $orderField = 'table.contents.modified';
         } elseif ($orderBy === 'commentsNum') {
-            // 评论数排序需要特殊处理
-            $params['order'] = $order;
-            //$params['sort'] = 'commentsNum';
+            $orderField = 'table.contents.commentsNum';
         }
         
-        // 获取文章列表
-        $posts = \Typecho\Widget::widget('Widget_Archive', $params);
+        // 查询文章CID列表
+        $query = $db->select('DISTINCT table.contents.cid')
+            ->from('table.contents')
+            ->join('table.relationships', 'table.contents.cid = table.relationships.cid')
+            ->where('table.relationships.mid IN ?', $allMids)
+            ->where('table.contents.type = ?', 'post')
+            ->where('table.contents.status = ?', 'publish')
+            ->where('table.contents.created < ?', $options->time)
+            ->order($orderField, $order === 'ASC' ? \Typecho\Db::SORT_ASC : \Typecho\Db::SORT_DESC)
+            ->offset($offset)
+            ->limit($limit);
         
-        $postList = [];
+        $cids = $db->fetchAll($query);
+        $cidList = array_column($cids, 'cid');
         
-        // 遍历文章
-        while ($posts->next()) {
-            // 获取文章分类
-            $category = $posts->category;
-            $categoryArray = [];
-            
-            if (is_object($category) && method_exists($category, 'mid')) {
-                $categoryArray = [
-                    'id' => $category->mid,
-                    'name' => $category->name,
-                    'permalink' => $category->permalink
-                ];
-            }
-            
-            // 获取文章标签
-            $tags = [];
-            $postTags = $posts->tags;
-            if (!empty($postTags)) {
-                // 处理标签数组
-                foreach ($postTags as $tag) {
-                    $tags[] = [
-                        'id' => (int)$tag['mid'],
-                        'name' => $tag['name'],
-                        'permalink' => $tag['permalink']
-                    ];
-                }
-            }
-            
-            // 尝试获取浏览量（如果有统计插件）
-            $views = 0;
-            if (method_exists($posts, 'views')) {
-                $views = (int)$posts->views;
-            }
-            
-            // 检查是否有缩略图
-            $hasThumbnail = false;
-            $thumbnail = '';
-            
-            // 方法1: 通过自定义字段获取
-            if (method_exists($posts, 'fields')) {
-                $fields = $posts->fields;
-                if (is_array($fields) && isset($fields['thumb'])) {
-                    $hasThumbnail = true;
-                    $thumbnail = $fields['thumb'];
-                }
-            }
-            
-            // 方法2: 从内容中提取第一张图片
-            if (!$hasThumbnail) {
-                $content = $posts->content;
-                if (preg_match('/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $content, $matches)) {
-                    $hasThumbnail = true;
-                    $thumbnail = $matches[1];
-                }
-            }
-            
-            // 构建文章数据数组
-            $postData = [
-                'cid' => $posts->cid,
-                'title' => $posts->title,
-                'slug' => $posts->slug,
-                'permalink' => $posts->permalink,
-                'excerpt' => $posts->excerpt,
-                'content' => $posts->content,
-                'text' => $posts->text,
-                'created' => $posts->created,
-                'modified' => $posts->modified,
-                'authorId' => $posts->authorId,
-                'authorName' => $posts->author->name,
-                'authorPermalink' => $posts->author->permalink,
-                'commentsNum' => (int)$posts->commentsNum,
-                'categoryId' => $categoryArray['id'] ?? 0,
-                'categoryName' => $categoryArray['name'] ?? '',
-                'categoryPermalink' => $categoryArray['permalink'] ?? '',
-                'tags' => $tags,
-                'views' => $views,
-                'isTop' => (bool)$posts->isTop,
-                'hasThumbnail' => $hasThumbnail,
-                'thumbnail' => $thumbnail
+        if (empty($cidList)) {
+            return [];
+        }
+        
+        // 批量查询完整文章数据
+        $rows = $db->fetchAll(
+            $db->select()->from('table.contents')
+                ->where('cid IN ?', $cidList)
+        );
+        
+        // 按原始排序整理
+        $rowMap = [];
+        foreach ($rows as $row) {
+            $rowMap[$row['cid']] = $row;
+        }
+        
+        // 查询文章自定义字段（缩略图等）
+        $fieldsMap = [];
+        $fieldsRows = $db->fetchAll(
+            $db->select()->from('table.fields')
+                ->where('cid IN ?', $cidList)
+        );
+        foreach ($fieldsRows as $f) {
+            $fieldsMap[$f['cid']][$f['name']] = $f[$f['type'] . '_value'];
+        }
+        
+        // 查询文章标签
+        $tagsMap = [];
+        $tagsRows = $db->fetchAll(
+            $db->select('r.cid', 'm.mid', 'm.name', 'm.slug')
+                ->from('table.metas m')
+                ->join('table.relationships r', 'r.mid = m.mid')
+                ->where('r.cid IN ?', $cidList)
+                ->where('m.type = ?', 'tag')
+        );
+        foreach ($tagsRows as $t) {
+            $tagsMap[$t['cid']][] = [
+                'id' => (int)$t['mid'],
+                'name' => $t['name'],
+                'permalink' => \Typecho\Router::url(
+                    'tag',
+                    ['slug' => urlencode($t['slug'])],
+                    $options->index
+                )
             ];
-            
-            $postList[] = $postData;
         }
         
-        // 重置指针
-        $posts->reset();
+        // 构建结果
+        $postList = [];
+        $catSlug = $cat['slug'];
+        $catPermalink = \Typecho\Router::url(
+            'category',
+            [
+                'directory' => urlencode($catSlug),
+                'slug' => urlencode($catSlug)
+            ],
+            $options->index
+        );
+        foreach ($cidList as $cid) {
+            $row = $rowMap[$cid] ?? null;
+            if (!$row) continue;
+            
+            $fields = $fieldsMap[$cid] ?? [];
+            $thumbnail = '';
+            $hasThumbnail = false;
+            
+            if (!empty($fields['thumb'])) {
+                $thumbnail = $fields['thumb'];
+                $hasThumbnail = true;
+            } elseif (preg_match('/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $row['text'], $m)) {
+                $thumbnail = $m[1];
+                $hasThumbnail = true;
+            }
+            
+            $postPermalink = '';
+            if (null != \Typecho\Router::get($row['type'])) {
+                $postPermalink = \Typecho\Router::url($row['type'], $row, $options->index);
+            }
+            
+            $postList[] = [
+                'cid'         => (int)$row['cid'],
+                'title'       => $row['title'],
+                'slug'        => $row['slug'],
+                'permalink'   => $postPermalink,
+                'excerpt'     => \Typecho\Common::subStr(strip_tags($row['text']), 0, 200, '...'),
+                'content'     => $row['text'],
+                'text'        => $row['text'],
+                'created'     => (int)$row['created'],
+                'modified'    => (int)$row['modified'],
+                'authorId'    => (int)$row['authorId'],
+                'authorName'  => '',
+                'authorPermalink' => '',
+                'commentsNum' => (int)$row['commentsNum'],
+                'categoryId'  => (int)$categoryId,
+                'categoryName' => $cat['name'],
+                'categoryPermalink' => $catPermalink,
+                'tags'        => $tagsMap[$cid] ?? [],
+                'views'       => 0,
+                'isTop'       => false,
+                'hasThumbnail' => $hasThumbnail,
+                'thumbnail'   => $thumbnail,
+            ];
+        }
         
         return $postList;
         
     } catch (Exception $e) {
-        // 记录错误但不中断页面
         error_log("getPostsByCategoryId error: " . $e->getMessage());
         return [];
     }

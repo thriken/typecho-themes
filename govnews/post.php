@@ -6,7 +6,7 @@ $this->need('sidebar.php'); ?>
 
 <main class="main-content">
     <h1 class="article-title" itemprop="name headline"><?php $this->title(); ?></h1>
-    <article class="post" itemscope itemtype="http://schema.org/BlogPosting"></article>
+    <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
     <?php postMeta($this, 'post'); ?>
     <div class="article-content" itemprop="articleBody">
         <?php $this->content(); ?>

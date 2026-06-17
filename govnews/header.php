@@ -29,6 +29,7 @@
                         href="<?php $pages->permalink(); ?>"
                         title="<?php $pages->title(); ?>"><?php $pages->title(); ?></a>
                     <?php endwhile; ?>
+            <a href="javascript:;" id="wide-screen-toggle" class="wide-btn" title="切换宽屏模式">宽屏</a>
         </div>
     </div>
 
@@ -46,8 +47,8 @@
                 <?php endif; ?>
             </div>
             <div class="search-box">
-                <form id="search" method="post" action="<?php $this->options->siteUrl(); ?>" role="search">
-                    <label for="s" class="sr-only"><?php _e('搜索关键字'); ?></label>
+                <form id="search" method="get" action="<?php $this->options->siteUrl(); ?>" role="search">
+                    <label for="s" class="sr-only"><?php _e('搜索'); ?></label>
                     <input type="text" id="s" name="s" class="text" placeholder="<?php _e('输入关键字搜索'); ?>" />
                     <button type="submit" class="submit"><?php _e('搜索'); ?></button>
                 </form>

@@ -10,13 +10,23 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Microsoft YaHei", 微软雅黑, SimSun, 宋体, Arial, sans-serif;
 }
 body {
     background-color: #f5f5f5;
     color: #333;
     font-size: 16px;
     line-height: 1.6;
+    font-family: "PingFang SC", "Microsoft YaHei", "微软雅黑", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif;
+}
+/* 标题类使用衬线字体，更有新闻感 */
+h1, h2, h3, h4, h5, h6,
+.article-title,
+.category-title,
+.module-title h3,
+.side-nav .title,
+.logo-title,
+.error-title {
+    font-family: "Noto Serif SC", "Source Han Serif SC", "STSong", "SimSun", "宋体", "NSimSun", serif;
 }
 a {
     text-decoration: none;
@@ -58,6 +68,22 @@ ul, li {
 .top-nav a:hover {
     color: #f0f0f0;
     text-decoration: none;
+}
+.wide-btn {
+    cursor: pointer;
+    margin-left: auto;
+    padding: 0 14px;
+    font-size: 13px;
+    color: #ccc;
+    transition: color 0.2s;
+    user-select: none;
+}
+.wide-btn:hover {
+    color: #fff;
+    text-decoration: none;
+}
+body.wide-screen .wide-btn {
+    color: #ffd700;
 }
 
 /* 头部 */
@@ -105,6 +131,7 @@ ul, li {
     border: none;
     cursor: pointer;
     transition: background-color 0.3s;
+    font-family: "PingFang SC", "Microsoft YaHei", "微软雅黑", sans-serif;
 }
 .search-box button:hover {
     background-color: #004a8a;
@@ -126,6 +153,7 @@ ul, li {
     color: #fff;
     font-size: 16px;
     font-weight: 500;
+    font-family: "PingFang SC", "Microsoft YaHei", "微软雅黑", sans-serif;
 }
 .main-nav li a:hover, .main-nav li a.active {
     background-color: #005ea5;
@@ -161,6 +189,7 @@ ul, li {
     display: block;
     padding: 8px 20px;
     color: #333;
+    font-family: "PingFang SC", "Microsoft YaHei", "微软雅黑", sans-serif;
 }
 .side-nav li a:hover, .side-nav li a.active {
     background-color: #f5f5f5;
@@ -189,9 +218,18 @@ ul, li {
 .news-list li:last-child {
     border-bottom: none;
 }
+.news-list li > a {
+    flex: 1;
+    min-width: 0;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .news-list li .news-time {
     color: #999;
     font-size: 13px;
+    flex-shrink: 0;
+    margin-left: 12px;
 }
 .content-module {
     background-color: #fff;
@@ -300,10 +338,31 @@ ul, li {
 .article-content {
     font-size: 16px;
     line-height: 1.8;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    overflow: hidden;
+    font-family: "Noto Serif SC", "STSong", "SimSun", "宋体", "NSimSun", serif;
 }
 .article-content p {
     margin-bottom: 20px;
     text-indent: 2em;
+}
+.article-content a {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+.article-content pre,
+.article-content code {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+.article-content img,
+.article-content table,
+.article-content iframe {
+    max-width: 100%;
+    height: auto;
 }
 .back-btn {
     margin-top: 30px;
@@ -339,7 +398,6 @@ ul, li {
         max-width: 100%;
         text-align: left !important;
     }
-}
 }
 
 /* 底部 */
@@ -600,4 +658,469 @@ ul, li {
     color: #999;
     font-size: 14px;
     margin-top: 20px;
+}
+
+/* === 404 错误页 === */
+.error-page-wrapper {
+    flex: 1;
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    background: #fff;
+}
+.error-page {
+    padding: 70px 60px;
+    text-align: center;
+    max-width: 560px;
+    width: 100%;
+}
+.error-icon {
+    margin-bottom: 35px;
+}
+.error-icon svg {
+    width: 140px;
+    height: 140px;
+}
+.error-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 25px;
+}
+.error-desc {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 45px;
+    line-height: 1.8;
+}
+.error-search {
+    display: flex;
+    max-width: 420px;
+    margin: 0 auto 40px;
+}
+.error-search-input {
+    flex: 1;
+    height: 44px;
+    padding: 0 15px;
+    border: 1px solid #ccc;
+    border-right: none;
+    outline: none;
+    font-size: 15px;
+}
+.error-search-input:focus {
+    border-color: #005ea5;
+}
+.error-search-btn {
+    height: 44px;
+    padding: 0 28px;
+    background-color: #005ea5;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    white-space: nowrap;
+    transition: background-color 0.3s;
+}
+.error-search-btn:hover {
+    background-color: #004a8a;
+}
+.error-links {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+}
+.error-links a {
+    font-size: 15px;
+    color: #005ea5;
+}
+.error-links a:hover {
+    color: #004a8a;
+    text-decoration: underline;
+}
+
+/* ========================================
+   宽屏适配 — 1440p+ (≥1440px)
+   ======================================== */
+@media (min-width: 1440px) {
+    .container {
+        width: 1340px;
+    }
+    .side-nav {
+        width: 260px;
+    }
+    .content {
+        gap: 24px;
+    }
+    .main-content {
+        padding: 35px;
+    }
+    .content-module {
+        padding: 18px 24px;
+    }
+    /* 索引页标签稍大 */
+    .news-list li > a {
+        font-size: 15px;
+    }
+    .news-list li .news-time {
+        font-size: 14px;
+    }
+    .info-grid {
+        gap: 24px;
+    }
+    .info-card {
+        padding: 14px;
+    }
+    .info-card h4 {
+        font-size: 16px;
+    }
+    /* 头部 */
+    .logo img {
+        width: 280px;
+        height: 64px;
+    }
+    .logo-title {
+        font-size: 34px;
+    }
+    .search-box input {
+        width: 280px;
+        height: 38px;
+    }
+    .search-box button {
+        height: 38px;
+        width: 85px;
+    }
+    /* 底部 */
+    .footer-item {
+        width: 300px;
+    }
+    /* 文章详情 */
+    .article-content {
+        font-size: 17px;
+        line-height: 1.9;
+    }
+    .article-title {
+        font-size: 26px;
+    }
+    /* 404 */
+    .error-page {
+        max-width: 600px;
+        padding: 80px 70px;
+    }
+}
+
+/* ========================================
+   2K 超宽屏适配 — ≥2560px
+   ======================================== */
+@media (min-width: 2560px) {
+    .container {
+        width: 1500px;
+    }
+    .side-nav {
+        width: 280px;
+    }
+    .content {
+        gap: 30px;
+    }
+    .main-content {
+        padding: 40px 45px;
+    }
+    .content-module {
+        padding: 22px 28px;
+        margin-bottom: 24px;
+    }
+    .content-module .module-title h3 {
+        font-size: 20px;
+    }
+    /* 索引列表 */
+    .news-list li {
+        padding: 13px 0;
+    }
+    .news-list li > a {
+        font-size: 16px;
+    }
+    .news-list li .news-time {
+        font-size: 14px;
+    }
+    /* 首页三列→四列 */
+    .info-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 28px;
+    }
+    .info-card {
+        padding: 16px;
+    }
+    .info-card h4 {
+        font-size: 17px;
+    }
+    .info-card p {
+        font-size: 14px;
+    }
+    /* 头部 */
+    .header {
+        padding: 28px 0;
+    }
+    .logo img {
+        width: 300px;
+        height: 70px;
+    }
+    .logo-title {
+        font-size: 36px;
+    }
+    .search-box input {
+        width: 300px;
+        height: 40px;
+        font-size: 15px;
+    }
+    .search-box button {
+        height: 40px;
+        width: 90px;
+        font-size: 16px;
+    }
+    /* 主导航 */
+    .main-nav {
+        height: 52px;
+        line-height: 52px;
+    }
+    .main-nav li a {
+        font-size: 17px;
+        padding: 0 28px;
+    }
+    /* 侧边栏 */
+    .side-nav .title {
+        font-size: 19px;
+        padding: 12px 18px;
+    }
+    .side-nav li a {
+        padding: 10px 22px;
+        font-size: 15px;
+    }
+    /* 底部 */
+    .footer-item {
+        width: 330px;
+    }
+    .footer h4 {
+        font-size: 17px;
+    }
+    /* 文章详情 */
+    .article-content {
+        font-size: 18px;
+        line-height: 2;
+    }
+    .article-title {
+        font-size: 28px;
+    }
+    .article-info {
+        font-size: 15px;
+    }
+    /* 分类页 */
+    .category-title {
+        font-size: 22px;
+    }
+    /* 404 */
+    .error-page {
+        max-width: 640px;
+        padding: 90px 80px;
+    }
+    .error-title {
+        font-size: 28px;
+    }
+    .error-icon svg {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+/* ========================================
+   宽屏模式 — 流式全宽布局 (DiscuzX 风格)
+   切换 .wide-screen 类后触发
+   ======================================== */
+
+/* 基础流式：容器由固定宽度变为百分比，最小保持 1200px 不崩塌 */
+body.wide-screen .container {
+    width: 97%;
+    max-width: none;
+    min-width: 1200px;
+    padding: 0;
+}
+
+/* 内容区间距放大，利用宽屏空间 */
+body.wide-screen .content {
+    gap: 28px;
+}
+
+/* 侧边栏稍微加宽 */
+body.wide-screen .side-nav {
+    width: 16%;
+    min-width: 200px;
+    flex-shrink: 0;
+}
+
+/* 主内容自然填充剩余空间 */
+body.wide-screen .main-content {
+    padding: 35px 40px;
+}
+
+/* 模块卡片间距拉开 */
+body.wide-screen .content-module {
+    padding: 18px 24px;
+    margin-bottom: 24px;
+}
+
+/* 三列信息网格 → 在当前宽度下保持三列，间距更大 */
+body.wide-screen .info-grid {
+    gap: 28px;
+}
+
+/* 列表字体稍大 */
+body.wide-screen .news-list li > a {
+    font-size: 15px;
+}
+body.wide-screen .news-list li .news-time {
+    font-size: 14px;
+}
+
+/* 头部 */
+body.wide-screen .logo img {
+    width: 280px;
+    height: 64px;
+}
+body.wide-screen .logo-title {
+    font-size: 34px;
+}
+body.wide-screen .search-box input {
+    width: 280px;
+    height: 38px;
+}
+body.wide-screen .search-box button {
+    height: 38px;
+    width: 85px;
+}
+
+/* 主导航 */
+body.wide-screen .main-nav li a {
+    padding: 0 28px;
+}
+
+/* 文章详情 */
+body.wide-screen .article-content {
+    font-size: 17px;
+    line-height: 1.9;
+}
+body.wide-screen .article-title {
+    font-size: 26px;
+}
+
+/* 底部 — 4栏均分，不折行 */
+body.wide-screen .footer-item {
+    flex: 1 1 0;
+    min-width: 200px;
+}
+body.wide-screen .footer .container {
+    justify-content: space-between;
+    gap: 30px;
+}
+
+/* 宽屏模式 + 1440p 增强 */
+@media (min-width: 1440px) {
+    body.wide-screen .container {
+        width: 98%;
+    }
+    body.wide-screen .content {
+        gap: 32px;
+    }
+    body.wide-screen .side-nav {
+        width: 15%;
+        min-width: 220px;
+    }
+    body.wide-screen .main-content {
+        padding: 40px 50px;
+    }
+    body.wide-screen .content-module {
+        padding: 22px 28px;
+    }
+    body.wide-screen .info-grid {
+        gap: 32px;
+    }
+    body.wide-screen .news-list li > a {
+        font-size: 16px;
+    }
+    body.wide-screen .article-content {
+        font-size: 18px;
+        line-height: 2;
+    }
+    body.wide-screen .article-title {
+        font-size: 28px;
+    }
+    body.wide-screen .logo-title {
+        font-size: 36px;
+    }
+    body.wide-screen .search-box input {
+        width: 300px;
+        height: 40px;
+    }
+    body.wide-screen .search-box button {
+        height: 40px;
+        width: 90px;
+    }
+}
+
+/* 宽屏模式 + 2K 增强 */
+@media (min-width: 2560px) {
+    body.wide-screen .container {
+        width: 96%;
+        max-width: 2400px;
+    }
+    body.wide-screen .content {
+        gap: 40px;
+    }
+    body.wide-screen .side-nav {
+        width: 13%;
+        min-width: 240px;
+    }
+    body.wide-screen .main-content {
+        padding: 45px 60px;
+    }
+    body.wide-screen .content-module {
+        padding: 26px 32px;
+    }
+    body.wide-screen .info-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 36px;
+    }
+    body.wide-screen .module-title h3 {
+        font-size: 20px;
+    }
+    body.wide-screen .news-list li > a {
+        font-size: 17px;
+    }
+    body.wide-screen .article-content {
+        font-size: 19px;
+        line-height: 2.1;
+    }
+    body.wide-screen .article-title {
+        font-size: 30px;
+    }
+    body.wide-screen .logo-title {
+        font-size: 38px;
+    }
+    body.wide-screen .search-box input {
+        width: 340px;
+        height: 42px;
+        font-size: 16px;
+    }
+    body.wide-screen .search-box button {
+        height: 42px;
+        width: 95px;
+        font-size: 16px;
+    }
+    body.wide-screen .main-nav {
+        height: 52px;
+        line-height: 52px;
+    }
+    body.wide-screen .main-nav li a {
+        font-size: 17px;
+        padding: 0 30px;
+    }
 }

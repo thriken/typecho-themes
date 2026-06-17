@@ -53,91 +53,65 @@ $this->need('sidebar.php'); ?>
         </ul>
     </div>
 
-    <!-- 通知公告+政务公开+本地资讯 三列 -->
+    <!-- 通知公告+政务公开+本地资讯 三列（后台可配） -->
+    <?php
+    $col3Ids = array_filter(array_map('intval', explode(',', $this->options->homeCol3Cats)));
+    if (!empty($col3Ids)): ?>
     <div class="info-grid">
+        <?php foreach ($col3Ids as $mid):
+            $cat = getCategoryById($mid);
+            $posts = $cat ? getSimplePostsByCategoryId($mid, 3) : [];
+        ?>
         <div class="content-module">
             <div class="module-title">
-                <h3>通知公告</h3>
-                <a href="#">更多>></a>
+                <h3><?php echo $cat ? htmlspecialchars($cat['name']) : '#' . $mid; ?></h3>
+                <?php if ($cat): ?><a href="<?php echo $cat['permalink']; ?>">更多&gt;&gt;</a><?php endif; ?>
             </div>
             <ul class="news-list">
+                <?php foreach ($posts as $post): ?>
                 <li>
-                    <a href="#">不动产首次登记公告（XX集团有限公司）</a>
-                    <span class="news-time">2026-03-25</span>
+                    <a href="<?php echo $post['permalink']; ?>"><?php echo htmlspecialchars($post['title']); ?></a>
+                    <span class="news-time"><?php echo date('m-d', $post['created']); ?></span>
                 </li>
-                <li>
-                    <a href="#">2026年度考试录用公务员公告</a>
-                    <span class="news-time">2026-03-22</span>
-                </li>
-                <li>
-                    <a href="#">关于注销网络预约出租汽车经营许可证的公告</a>
-                    <span class="news-time">2026-03-23</span>
-                </li>
+                <?php endforeach; ?>
+                <?php if (empty($posts)): ?>
+                <li><span style="color:#999;">暂无文章</span></li>
+                <?php endif; ?>
             </ul>
         </div>
-        <div class="content-module">
-            <div class="module-title">
-                <h3>政务公开</h3>
-                <a href="#">更多>></a>
-            </div>
-            <ul class="news-list">
-                <li>
-                    <a href="#">2025年度政府网站工作年度报表</a>
-                    <span class="news-time">2026-01-13</span>
-                </li>
-                <li>
-                    <a href="#">财政预决算公开</a>
-                    <span class="news-time">2026-03-10</span>
-                </li>
-                <li>
-                    <a href="#">政策文件解读</a>
-                    <span class="news-time">2026-01-14</span>
-                </li>
-            </ul>
-        </div>
-        <div class="content-module">
-            <div class="module-title">
-                <h3>本地资讯</h3>
-                <a href="#">更多>></a>
-            </div>
-            <ul class="news-list">
-                <li>
-                    <a href="#">我县第一小学开展文明主题升旗仪式</a>
-                    <span class="news-time">2026-03-23</span>
-                </li>
-                <li>
-                    <a href="#">兴福镇开展人大代表进站履职活动</a>
-                    <span class="news-time">2026-03-20</span>
-                </li>
-                <li>
-                    <a href="#">陈户镇开展学雷锋精神主题宣讲活动</a>
-                    <span class="news-time">2026-03-17</span>
-                </li>
-            </ul>
-        </div>
+        <?php endforeach; ?>
     </div>
+    <?php endif; ?>
 
-    <!-- 政策文件模块 -->
+    <!-- 政策文件等单栏模块（后台可配，多个分类各占一行） -->
+    <?php
+    $col1Ids = array_filter(array_map('intval', explode(',', $this->options->homeCol1Cats)));
+    if (!empty($col1Ids)):
+        foreach ($col1Ids as $mid):
+            $cat = getCategoryById($mid);
+            $policyPosts = $cat ? getPostsByCategoryId($mid, 3) : [];
+    ?>
     <div class="content-module">
         <div class="module-title">
-            <h3>最新政策文件</h3>
-            <a href="#">更多>></a>
+            <h3><?php echo $cat ? htmlspecialchars($cat['name']) : '#' . $mid; ?></h3>
+            <?php if ($cat): ?><a href="<?php echo $cat['permalink']; ?>">更多&gt;&gt;</a><?php endif; ?>
         </div>
         <div class="info-grid">
+            <?php foreach ($policyPosts as $post): ?>
             <div class="info-card">
-                <h4>关于加快建立长期护理保险制度的意见</h4>
-                <p>中共中央办公厅 国务院办公厅印发，明确长期护理保险制度建设的总体要求、主要内容和保障措施...</p>
+                <h4><a href="<?php echo $post['permalink']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></h4>
+                <p><?php echo htmlspecialchars(mb_substr(strip_tags($post['excerpt'] ?: $post['content']), 0, 120)); ?></p>
             </div>
-            <div class="info-card">
-                <h4>国有企业领导人员廉洁从业规定</h4>
-                <p>进一步规范国有企业领导人员廉洁从业行为，加强国有企业党风廉政建设和反腐败工作...</p>
-            </div>
-            <div class="info-card">
-                <h4>加快培育服务消费新增长点工作方案</h4>
-                <p>国务院办公厅印发，提出多项举措培育服务消费新增长点，推动消费提质升级...</p>
-            </div>
+            <?php endforeach; ?>
+            <?php if (empty($policyPosts)): ?>
+            <p style="color:#999;padding:10px;">暂无文章</p>
+            <?php endif; ?>
         </div>
     </div>
+    <?php
+        endforeach;
+    endif;
+    ?>
 </main>
 
 <?php $this->need('footer.php'); ?>
