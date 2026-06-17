@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="<?php $this->options->themeUrl('css/main.css'); ?>">
     <!-- 规范化 -->
     <link rel="stylesheet" href="<?php $this->options->themeUrl('css/normalize.css'); ?>">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" crossorigin="anonymous">
     <?php $this->header(); ?>
 </head>
 <body>

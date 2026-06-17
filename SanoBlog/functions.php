@@ -8,27 +8,23 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 /**
  * Theme initial setup
+ * 仅检测 views 列是否存在（static 缓存，单进程一次查询），不自动执行 DDL。
+ * 若缺失，get_post_view() 会优雅降级；安装请访问 /usr/themes/SanoBlog/_install.php
  */
 function themeInit($widget)
 {
-    // Ensure views column exists (runs once per request)
+    // 静态缓存：整个 PHP 进程生命周期内只查一次
     static $checked = false;
-    if (!$checked) {
-        $checked = true;
-        try {
-            $db = \Typecho\Db::get();
-            $prefix = $db->getPrefix();
+    if ($checked) return;
+    $checked = true;
 
-            // Check if views column exists using Typecho's query
-            $result = $db->fetchAll(
-                $db->query("SHOW COLUMNS FROM `{$prefix}contents` LIKE 'views'", \Typecho\Db::READ)
-            );
-            if (empty($result)) {
-                $db->query("ALTER TABLE `{$prefix}contents` ADD COLUMN `views` INT(10) DEFAULT 0");
-            }
-        } catch (\Exception $e) {
-            // Silently ignore - views tracking will be disabled
-        }
+    // 跨数据库兼容：尝试 SELECT views 列，失败则列不存在（兼容 MySQL/SQLite）
+    try {
+        $db = \Typecho\Db::get();
+        $db->fetchAll($db->select('views')->from('table.contents')->limit(1));
+        define('SB_HAS_VIEWS_COL', true);
+    } catch (\Exception $e) {
+        define('SB_HAS_VIEWS_COL', false);
     }
 }
 
@@ -68,6 +64,8 @@ function themeConfig($form)
     echo '<a href="javascript:void(0)" data-group="g-stats" onclick="showSection(\'g-stats\');return false;">📊 统计</a>';
     echo '<a href="javascript:void(0)" data-group="g-sidebar" onclick="showSection(\'g-sidebar\');return false;">📐 侧边栏</a>';
     echo '<a href="javascript:void(0)" data-group="g-footer" onclick="showSection(\'g-footer\');return false;">📄 页脚</a>';
+    // 维护快捷入口（新标签页打开）
+    echo '<a href="' . \Typecho\Widget::widget('Widget_Options')->themeUrl . '/_install.php" target="_blank" style="margin-top:auto;opacity:.65;border-top:1px solid #e2e8f0;padding-top:10px;margin-top:10px;">🔧 维护</a>';
     echo '</nav>';
 
     // 分组辅助函数
@@ -255,101 +253,9 @@ function themeConfig($form)
     // 保存按钮独立容器（始终显示，不受分组切换影响）
     echo '<div class="sano-config-submit-wrap" id="g-submit"></div>';
 
-    // ═════════════════ JS：表单项归位 + 分组切换 + 折叠 ═════════════════
-    echo '<script>
-(function(){
-    function rearrange(){
-        var groups=document.querySelectorAll(".sano-config-group");
-        if(!groups.length){setTimeout(rearrange,50);return;}
-        var bodies=[];
-        groups.forEach(function(g){var b=g.querySelector(".sano-config-body");if(b)bodies.push(b);});
-        if(!bodies.length)return;
-
-        var container=document.querySelector("form")||document.querySelector(".typecho-body")||document.querySelector(".main-content")||document.body;
-
-        // 收集需要归位的表单项（排除保存按钮，它放独立容器）
-        var orphans=[];
-        var submitEl=null;
-        var children=container.childNodes;
-        for(var i=0;i<children.length;i++){
-            var el=children[i];
-            if(el.nodeType!==1)continue;
-            if(el.classList&&(el.classList.contains("sano-config-nav")||el.classList.contains("sano-config-group")||el.classList.contains("sano-config-submit-wrap")||el.classList.contains("sano-back-top")))continue;
-            var tag=el.tagName.toLowerCase();
-            if(["script","style","link","meta","noscript"].indexOf(tag)!==-1)continue;
-            // 识别保存按钮 → 放入独立容器 g-submit
-            if(el.querySelector("button[type=\"submit\"]")||(el.classList&&el.classList.contains("typecho-option")&&el.querySelector(".btn.primary"))){
-                submitEl=el;
-                continue;
-            }
-            orphans.push(el);
-        }
-
-        // 保存按钮 → g-submit（始终可见）
-        if(submitEl){
-            var sw=document.getElementById("g-submit");
-            if(sw)sw.appendChild(submitEl);
-        }
-
-        // 按分组顺序分配：基础4→广告5→统计3→侧边栏9→页脚1
-        var counts=[4,5,3,9,1];
-        var idx=0;
-        for(var g=0;g<bodies.length;g++){
-            var limit=counts[g]||999;
-            for(var c=0;c<limit&&idx<orphans.length;c++,idx++){
-                bodies[g].appendChild(orphans[idx]);
-            }
-        }
-        while(idx<orphans.length){
-            bodies[bodies.length-1].appendChild(orphans[idx]);idx++;
-        }
-
-        // 把分组容器 + 保存按钮容器移入 form 内
-        var form=document.querySelector("form");
-        if(form){
-            var grps=document.querySelectorAll(".sano-config-group");
-            for(var i=grps.length-1;i>=0;i--){
-                form.insertBefore(grps[i], form.firstChild);
-            }
-            var sw=document.getElementById("g-submit");
-            if(sw)form.appendChild(sw);
-        }
-    }
-
-    // 切换可见分组（同时高亮导航）
-    window.showSection=function(id){
-        var all=document.querySelectorAll(".sano-config-group");
-        all.forEach(function(g){
-            g.style.display=(g.id===id)?"":"none";
-        });
-        document.querySelectorAll(".sano-config-nav a").forEach(function(a){
-            a.classList.toggle("active", a.getAttribute("data-group") === id);
-        });
-    };
-
-    // 点击分组头折叠/展开 body
-    window.toggleBody=function(head){
-        var body=head.nextElementSibling;
-        if(body&&body.classList.contains("sano-config-body")){
-            body.classList.toggle("collapsed");
-            var arrow=head.querySelector(".sano-arrow");
-            if(arrow){
-                arrow.innerHTML=body.classList.contains("collapsed")?"&#9654;":"&#9660;";
-            }
-        }
-    };
-
-    if(document.readyState==="loading"){
-        document.addEventListener("DOMContentLoaded",function(){
-            rearrange();
-            showSection("g-basic");
-        });
-    }else{
-        rearrange();
-        showSection("g-basic");
-    }
-})();
-</script>';
+    // ═════════════════ JS 已抽离到 assets/admin.js ═════════════════
+    $themeUrl = \Typecho\Widget::widget('Widget_Options')->themeUrl;
+    echo '<script src="' . $themeUrl . '/assets/admin.js?v=1.0"></script>';
     // 返回顶部按钮
     echo '<a href="#" class="sano-back-top" title="返回顶部">&#8593;</a>';
 }
@@ -553,11 +459,18 @@ function sbNavItem($item, $current = false, $widget = null)
 }
 
 /**
- * Post view count
+ * Post view count（优雅降级：views 列不存在时返回 0 且不报错）
  */
 function get_post_view($archive)
 {
     $cid = $archive->cid;
+
+    // views 列不存在时静默返回 0（需先执行 _install.php 安装）
+    if (!defined('SB_HAS_VIEWS_COL') || !SB_HAS_VIEWS_COL) {
+        echo '0';
+        return;
+    }
+
     $db = \Typecho\Db::get();
     try {
         $row = $db->fetchRow(

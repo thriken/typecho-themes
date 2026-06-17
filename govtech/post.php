@@ -43,7 +43,7 @@
                                 <?php endif; ?>
                                 <?php 
                                 if ($this->user->hasLogin()) {
-                                        echo '<span class="post-meta__item"><a href="https://typecho.cn/admin/write-post.php?cid=' . $this->cid . '">编辑</a></span>';
+                                        echo '<span class="post-meta__item"><a href="' . $this->options->adminUrl('write-post.php?cid=' . $this->cid) . '">编辑</a></span>';
                                 }
                             ?>
                             </div>
@@ -51,13 +51,16 @@
 
                         <!-- 文章正文 -->
                         <div class="article__body" itemprop="articleBody">
-                            <?php //$this->content(); ?>
                             <?php
-    $pattern = '/\<img.*?src\=\"(.*?)\"[^>]*>/i';
-    $replacement = '<a href="$1" data-fancybox="gallery" /><img src="$1" alt="'.$this->title.'" title="点击放大图片"></a>';
-    $content = preg_replace($pattern, $replacement, $this->content);
-    echo $content;
-?>
+                            // 用 ob 捕获 content() 渲染后的 HTML，确保 Markdown/插件已处理
+                            ob_start();
+                            $this->content();
+                            $renderedContent = ob_get_clean();
+                            // 支持双引号和单引号的 src，跳过已有 data-fancybox 的图片
+                            $pattern = '/<img(?!.*data-fancybox)[^>]*\ssrc\s*=\s*["\']([^"\']+)["\'][^>]*>/i';
+                            $replacement = '<a href="$1" data-fancybox="gallery"><img src="$1" alt="' . htmlspecialchars($this->title) . '" title="点击放大图片"></a>';
+                            echo preg_replace($pattern, $replacement, $renderedContent);
+                            ?>
                         </div>
                         
                         <?php if(isset($this->fields->DownloadUrl)): ?>

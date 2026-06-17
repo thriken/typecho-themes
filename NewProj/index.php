@@ -1,6 +1,6 @@
 <?php
 /**
- * 基于 nxtrace.org 风格设计的 Typecho 主题
+ * 基于 nxtrace.org 风格设计的 Typecho 主题，推荐搭配LightBox插件
  * 特点：
  * - 响应式布局，支持移动端
  * - 深色/浅色模式切换
@@ -70,48 +70,29 @@ $this->need('header.php');
 
         <?php elseif ($heroType == 'post' && $this->options->heroPostId): ?>
         <!-- ===== 置顶文章推荐模式 ===== -->
-        <?php
-            $heroPostId = intval($this->options->heroPostId);
-            $db = Typecho_Db::get();
-            $heroPost = $db->fetchRow($db->select()->from('table.contents')->where('cid = ?', $heroPostId)->where('type = ?', 'post')->where('status = ?', 'publish'));
-        ?>
-        <?php if ($heroPost): ?>
-        <?php
-            // 获取文章 permalink（通过 Router 根据路由规则生成）
-            $heroPermalink = Typecho_Router::url('post', $heroPost, $this->options->index);
-            // 获取分类
-            $categoryRow = $db->fetchRow($db->select()->from('table.metas')->join('table.relationships', 'table.metas.mid = table.relationships.mid')->where('table.relationships.cid = ?', $heroPostId)->where('table.metas.type = ?', 'category')->limit(1));
-            $heroCategory = $categoryRow ? $categoryRow['name'] : '';
-            $heroCategorySlug = $categoryRow ? $categoryRow['slug'] : '';
-            // 获取缩略图，没有则使用随机网络图
-            $heroThumb = '';
-            $thumbRow = $db->fetchRow($db->select('str_value')->from('table.fields')->where('cid = ?', $heroPostId)->where('name = ?', 'thumb'));
-            if ($thumbRow && !empty($thumbRow['str_value'])) {
-                $heroThumb = $thumbRow['str_value'];
-            } else {
-                $heroThumb = 'https://picsum.photos/450/300';
-            }
-        ?>
+        <?php $heroData = getHeroPostData(intval($this->options->heroPostId)); ?>
+        <?php if ($heroData): ?>
+        <?php $heroPost = $heroData['post']; ?>
         <div class="hero-content">
-            <h1 class="hero-title"><a href="<?php echo $heroPermalink; ?>" style="color:inherit;text-decoration:none;"><?php echo $heroPost['title']; ?></a></h1>
-            <?php if ($heroCategory): ?>
+            <h1 class="hero-title"><a href="<?php echo $heroData['permalink']; ?>" style="color:inherit;text-decoration:none;"><?php echo $heroPost['title']; ?></a></h1>
+            <?php if ($heroData['category']): ?>
             <p class="hero-subtitle" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                <span class="category" style="background:var(--color-primary);color:#fff;padding:2px 10px;border-radius:20px;font-size:0.8rem;"><?php echo $heroCategory; ?></span>
+                <span class="category" style="background:var(--color-primary);color:#fff;padding:2px 10px;border-radius:20px;font-size:0.8rem;"><?php echo $heroData['category']; ?></span>
                 <span style="color:var(--color-text-muted);font-size:0.85rem;"><?php echo date('Y-m-d', $heroPost['created']); ?></span>
             </p>
             <?php endif; ?>
-            <p class="hero-subtitle"><?php echo excerpt($heroPost['text'], 100); ?></p>
+            <p class="hero-subtitle"><?php echo np_excerpt($heroPost['text'], 100); ?></p>
             <div class="hero-actions">
-                <a href="<?php echo $heroPermalink; ?>" class="btn-primary">
+                <a href="<?php echo $heroData['permalink']; ?>" class="btn-primary">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     阅读全文
                 </a>
             </div>
         </div>
-        <?php if ($heroThumb): ?>
+        <?php if ($heroData['thumb']): ?>
         <div class="hero-demo">
             <div class="hero-project-image">
-                <img src="<?php echo $heroThumb;?>" alt="<?php echo $heroPost['title']; ?>">
+                <img src="<?php echo $heroData['thumb']; ?>" alt="<?php echo $heroPost['title']; ?>">
             </div>
         </div>
         <?php endif; ?>
@@ -166,7 +147,7 @@ $this->need('header.php');
                             <h2 class="article-title">
                                 <a href="<?php $this->permalink(); ?>"><?php $this->title(); ?></a>
                             </h2>
-                            <p class="article-excerpt"><?php echo excerpt($this->text, 120); ?></p>
+                            <p class="article-excerpt"><?php echo np_excerpt($this->text, 120); ?></p>
                             <div class="article-footer">
                                 <span>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>

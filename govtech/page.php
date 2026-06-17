@@ -11,12 +11,15 @@
                         </header>
                         <div class="article__body">
                             <?php
-    $pattern = '/\<img.*?src\=\"(.*?)\"[^>]*>/i';
-    $replacement = '<a href="$1" data-fancybox="gallery" /><img src="$1" alt="'.$this->title.'" title="点击放大图片"></a>';
-    $content = preg_replace($pattern, $replacement, $this->content);
-    echo $content;
-?>
-                            <?php //$this->content(); ?>
+                            // 用 ob 捕获 content() 渲染后的 HTML，确保 Markdown/插件已处理
+                            ob_start();
+                            $this->content();
+                            $renderedContent = ob_get_clean();
+                            // 支持双引号和单引号的 src，跳过已有 data-fancybox 的图片
+                            $pattern = '/<img(?!.*data-fancybox)[^>]*\ssrc\s*=\s*["\']([^"\']+)["\'][^>]*>/i';
+                            $replacement = '<a href="$1" data-fancybox="gallery"><img src="$1" alt="' . htmlspecialchars($this->title) . '" title="点击放大图片"></a>';
+                            echo preg_replace($pattern, $replacement, $renderedContent);
+                            ?>
                         </div>
                     </article>
 

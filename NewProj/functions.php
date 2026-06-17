@@ -155,24 +155,61 @@ function themeConfig($form) {
 }
 
 /**
- * 文章浏览数统计
+ * 获取 Hero 置顶文章数据（封装数据库查询，供 index.php 调用）
+ * @param int $cid 文章 ID
+ * @return array|null 文章数据数组或 null
  */
-function getViewsNum($archive) {
+function getHeroPostData($cid) {
     $db = Typecho_Db::get();
-    $cid = $archive;
-    if (!is_numeric($cid)) {
-        $cid = $archive->cid;
-    }
+    $post = $db->fetchRow($db->select()->from('table.contents')
+        ->where('cid = ?', $cid)
+        ->where('type = ?', 'post')
+        ->where('status = ?', 'publish'));
 
-    $row = $db->fetchRow($db->select('views')->from('table.contents')->where('cid = ?', $cid));
+    if (!$post) return null;
+
+    $options = Typecho_Widget::widget('Widget_Options');
+    $result = ['post' => $post];
+
+    // 生成 permalink
+    $result['permalink'] = Typecho_Router::url('post', $post, $options->index);
+
+    // 获取分类
+    $categoryRow = $db->fetchRow($db->select()->from('table.metas')
+        ->join('table.relationships', 'table.metas.mid = table.relationships.mid')
+        ->where('table.relationships.cid = ?', $cid)
+        ->where('table.metas.type = ?', 'category')
+        ->limit(1));
+    $result['category'] = $categoryRow ? $categoryRow['name'] : '';
+    $result['categorySlug'] = $categoryRow ? $categoryRow['slug'] : '';
+
+    // 获取缩略图
+    $thumbRow = $db->fetchRow($db->select('str_value')->from('table.fields')
+        ->where('cid = ?', $cid)
+        ->where('name = ?', 'thumb'));
+    $result['thumb'] = ($thumbRow && !empty($thumbRow['str_value']))
+        ? $thumbRow['str_value']
+        : 'https://picsum.photos/450/300';
+
+    return $result;
+}
+
+/**
+ * 文章浏览数统计（仅接受文章 cid 数字）
+ * @param int $cid 文章 ID
+ * @return int 浏览数
+ */
+function getViewsNum($cid) {
+    $db = Typecho_Db::get();
+    $row = $db->fetchRow($db->select('views')->from('table.contents')->where('cid = ?', intval($cid)));
     if ($row) {
-        return $row['views'] ? $row['views'] : 0;
+        return $row['views'] ? intval($row['views']) : 0;
     }
     return 0;
 }
 
 /**
- * 增加浏览数
+ * 增加浏览数（使用独立 Cookie 避免溢出，24h 过期）
  */
 function theViews($archive) {
     $db = Typecho_Db::get();
@@ -180,28 +217,24 @@ function theViews($archive) {
     $row = $db->fetchRow($db->select('views')->from('table.contents')->where('cid = ?', $cid));
 
     if ($archive->is('single')) {
-        $views = Typecho_Cookie::get('extend_contents_views');
-        if (empty($views)) {
-            $views = array();
-        } else {
-            $views = explode(',', $views);
-        }
-
-        if (!in_array($cid, $views)) {
+        // 使用独立 Cookie key 取代逗号分隔数组，避免 Cookie 体积超限
+        $cookieKey = 'extend_views_' . $cid;
+        if (!Typecho_Cookie::get($cookieKey)) {
             $db->query($db->update('table.contents')->rows(array('views' => (int)$row['views'] + 1))->where('cid = ?', $cid));
-            array_push($views, $cid);
-            $views = implode(',', $views);
-            Typecho_Cookie::set('extend_contents_views', $views);
+            Typecho_Cookie::set($cookieKey, '1', time() + 86400);
         }
     }
 
-    echo $row['views'] ? $row['views'] : 0;
+    echo $row['views'] ? intval($row['views']) : 0;
 }
 
 /**
- * 自定义摘要
+ * 自定义摘要（加 np_ 前缀防命名冲突）
+ * @param string $content 文章内容
+ * @param int $length 截取长度（字符数）
+ * @return string
  */
-function excerpt($content, $length = 150) {
+function np_excerpt($content, $length = 150) {
     $content = strip_tags($content);
     $content = preg_replace('/\s+/', ' ', $content);
     $content = trim($content);
@@ -211,6 +244,13 @@ function excerpt($content, $length = 150) {
     }
 
     return $content;
+}
+
+/**
+ * @deprecated 使用 np_excerpt() 替代
+ */
+function excerpt($content, $length = 150) {
+    return np_excerpt($content, $length);
 }
 
 /**

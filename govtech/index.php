@@ -1,7 +1,7 @@
 ﻿<?php
 /**
  * 科技新闻
- * 政务科技风格Typecho主题，简洁蓝色科技配色，支持多屏幕自适应
+ * 政务科技风格Typecho主题，简洁蓝色科技配色，支持多屏幕自适应，自带fancybox
  * License MIT License
  * @package GovTech
  * @author Thriken
