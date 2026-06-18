@@ -75,6 +75,7 @@ $this->need('header.php');
                     <span class="text-gray-800 dark:text-gray-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors truncate flex-1 min-w-0"><?php $this->title(); ?></span>
                 </a>
                 <span class="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 ml-4 max-w-[150px] truncate">
+                    <?php if (!empty($this->password)): ?><i class="fas fa-lock text-amber-500 mr-1" title="加密文章"></i><?php endif; ?>
                     <?php $this->category(','); ?>&emsp;
                     <?php $this->commentsNum('<i class="far fa-comment"></i> 0', '<i class="far fa-comment"></i> 1', '<i class="far fa-comment"></i> %d'); ?>
                 </span>

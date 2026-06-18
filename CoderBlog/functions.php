@@ -51,6 +51,33 @@ function cbExcerpt($content, $length = 150)
 }
 
 /**
+ * 判断文章是否设置了访问密码
+ */
+function cbIsPasswordProtected($archive)
+{
+    return !empty($archive->password);
+}
+
+/**
+ * 判断密码是否已验证通过
+ * Typecho 验证后会设置 cookie: __typecho_protect_password_{cid}
+ */
+function cbIsPasswordVerified($archive)
+{
+    if (empty($archive->password)) {
+        return true;
+    }
+    // POST 提交时 Typecho 核心会处理，此时视为未验证
+    if ($archive->request->isPost()) {
+        return false;
+    }
+    $cookieName = '__typecho_protect_password_' . $archive->cid;
+    $cookieVal  = Typecho_Cookie::get($cookieName);
+    // Typecho 将密码哈希存入 cookie，匹配即验证通过
+    return ($cookieVal === $archive->password);
+}
+
+/**
  * 解析自定义导航菜单
  * 返回解析后的菜单项数组
  * 格式：每行 名称|链接|图标(可选)
@@ -167,6 +194,17 @@ function cbDefaultNavMenu($archive)
         // 查询失败时返回最小菜单
     }
     return $navItems;
+}
+
+/**
+ * 检查文章是否有真实缩略图（非随机占位图）
+ * 用于加密文章：真实图片才做高斯模糊，占位图保留原样
+ */
+function cbHasRealThumbnail($widget)
+{
+    if (!empty($widget->fields->thumb)) return true;
+    if (preg_match('/<img[^>]+src="([^"]+)"/i', $widget->content, $matches)) return true;
+    return false;
 }
 
 /**

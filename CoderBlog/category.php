@@ -34,12 +34,20 @@ $this->need('header.php');
                 <article class="card group animate-slide-up" style="animation-delay: <?php echo $delay; ?>ms">
                     <a href="<?php $this->permalink(); ?>" class="block">
                         <?php $thumb = cbThumbnail($this, 'random'); ?>
+                        <?php $isEncrypted = !empty($this->password); ?>
+                        <?php $hasRealImg  = $isEncrypted && cbHasRealThumbnail($this); ?>
                         <!-- 封面图（始终显示） -->
                         <div class="relative overflow-hidden rounded-t-xl">
                             <img src="<?php echo htmlspecialchars($thumb); ?>"
                                  alt="<?php $this->title(); ?>"
-                                 class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105"
+                                 class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105<?php if ($hasRealImg): ?> blur-xl scale-110<?php endif; ?>"
                                  loading="lazy">
+                            <?php if ($hasRealImg): ?>
+                            <!-- 加密遮罩 -->
+                            <div class="absolute inset-0 flex items-center justify-center z-10">
+                                <span class="text-white text-3xl font-extrabold tracking-[0.3em] drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] select-none">加密</span>
+                            </div>
+                            <?php endif; ?>
                             <!-- 标题遮罩层 -->
                             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-5">
                                 <h2 class="text-lg font-bold text-white line-clamp-2 leading-snug">
@@ -51,6 +59,9 @@ $this->need('header.php');
                             <div class="flex flex-wrap items-center gap-2 mb-3">
                                 <?php $cat = cbPrimaryCategory($this); ?>
                                 <span class="tag bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300 text-xs whitespace-nowrap max-w-[120px] truncate"><?php echo htmlspecialchars($cat['name']); ?></span>
+                                <?php if (!empty($this->password)): ?>
+                                <span class="inline-flex items-center gap-0.5 tag bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs" title="加密文章"><i class="fas fa-lock text-[10px]"></i></span>
+                                <?php endif; ?>
                                 <span class="text-xs text-gray-400 whitespace-nowrap"><i class="far fa-clock mr-1"></i><?php $this->date('Y-m-d'); ?></span>
                                 <span class="text-xs text-gray-400 whitespace-nowrap"><i class="far fa-comment mr-1"></i><?php $this->commentsNum('0', '1', '%d'); ?></span>
                             </div>
