@@ -60,20 +60,14 @@ function cbIsPasswordProtected($archive)
 
 /**
  * 判断密码是否已验证通过
- * Typecho 验证后会设置 cookie: __typecho_protect_password_{cid}
+ * Typecho 验证后设置 cookie: protectPassword_{cid}，值=明文密码
  */
 function cbIsPasswordVerified($archive)
 {
     if (empty($archive->password)) {
         return true;
     }
-    // POST 提交时 Typecho 核心会处理，此时视为未验证
-    if ($archive->request->isPost()) {
-        return false;
-    }
-    $cookieName = '__typecho_protect_password_' . $archive->cid;
-    $cookieVal  = Typecho_Cookie::get($cookieName);
-    // Typecho 将密码哈希存入 cookie，匹配即验证通过
+    $cookieVal = Typecho_Cookie::get('protectPassword_' . $archive->cid);
     return ($cookieVal === $archive->password);
 }
 

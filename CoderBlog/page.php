@@ -5,8 +5,8 @@
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 $this->need('header.php');
 
-// 密码保护检测
-if (cbIsPasswordProtected($this) && !cbIsPasswordVerified($this)): ?>
+// 密码保护检测（使用 Typecho 内置 hidden 属性）
+if ($this->hidden): ?>
 <article class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <div class="flex flex-col lg:flex-row gap-8">
         <div class="flex-1 min-w-0">
@@ -22,7 +22,7 @@ if (cbIsPasswordProtected($this) && !cbIsPasswordVerified($this)): ?>
                 <p class="text-gray-500 dark:text-gray-400 mb-8">
                     此页面已被加密，请输入访问密码继续阅读
                 </p>
-                <?php if ($this->request->isPost()): ?>
+                <?php if ($this->request->isPost() && $this->hidden): ?>
                 <div class="mb-6">
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
                         <i class="fas fa-circle-exclamation"></i> 密码错误，请重试
@@ -30,6 +30,7 @@ if (cbIsPasswordProtected($this) && !cbIsPasswordVerified($this)): ?>
                 </div>
                 <?php endif; ?>
                 <form method="post" action="<?php $this->permalink(); ?>" class="max-w-sm mx-auto">
+                    <input type="hidden" name="protectCID" value="<?php $this->cid(); ?>">
                     <div class="flex gap-2">
                         <input type="password" name="protectPassword" placeholder="请输入访问密码" required
                                class="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition text-sm">
