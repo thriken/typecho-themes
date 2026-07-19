@@ -25,7 +25,7 @@ if ($this->hidden): ?>
                     这篇文章已被加密，请输入访问密码继续阅读
                 </p>
 
-                <?php if ($this->request->isPost() && $this->hidden): ?>
+                <?php if ($this->request->get('pwdError') || ($this->request->isPost() && $this->hidden)): ?>
                 <div class="mb-6">
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
                         <i class="fas fa-circle-exclamation"></i> 密码错误，请重试
@@ -33,7 +33,7 @@ if ($this->hidden): ?>
                 </div>
                 <?php endif; ?>
 
-                <form method="post" action="<?php $this->permalink(); ?>" class="max-w-sm mx-auto">
+                <form method="post" action="<?php echo $this->security->getTokenUrl($this->permalink); ?>" class="max-w-sm mx-auto">
                     <input type="hidden" name="protectCID" value="<?php $this->cid(); ?>">
                     <div class="flex gap-2">
                         <input type="password"

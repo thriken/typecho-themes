@@ -14,6 +14,64 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 require_once __DIR__ . '/includes/themeConfig.php';
 
 /**
+ * 拦截加密文章的密码提交（在 Widget_Archive::singleHandle 之前执行）
+ *
+ * 解决问题：Typecho 1.2 的 singleHandle() 在密码错误时会抛 403 异常，
+ * Common::error() 会显示一个脱离主题样式的简陋错误页，体验不好。
+ * 我们在这里提前验证密码，密码错误时跳转到带 pwdError=1 的 URL，
+ * 让主题的密码框页面显示友好提示。
+ *
+ * 同时也解决 CSRF token 问题：singleHandle 会调用 security->protect()
+ * 验证 CSRF token，验证失败时 goBack() 重定向（无任何反馈）。
+ */
+Typecho_Plugin::factory('Widget_Archive')->handleInit = function ($archive, $select) {
+    // 仅处理 POST 请求 + protectPassword 参数 + post/page 类型
+    if (!$archive->request->isPost()) {
+        return;
+    }
+    if (!$archive->request->is('protectPassword')) {
+        return;
+    }
+    if (!isset($archive->parameter->type) || !in_array($archive->parameter->type, ['post', 'page'])) {
+        return;
+    }
+
+    $protectCID = $archive->request->get('protectCID');
+    $protectPassword = $archive->request->get('protectPassword');
+
+    if (empty($protectCID) || empty($protectPassword)) {
+        return;
+    }
+
+    $cid = intval($protectCID);
+    $password = $protectPassword;
+
+    // 从数据库查询文章真实密码
+    $db = Typecho_Db::get();
+    $row = $db->fetchRow(
+        $db->select('password')->from('table.contents')
+            ->where('cid = ?', $cid)
+            ->where('type = ?', $archive->parameter->type)
+    );
+
+    if (!$row || empty($row['password'])) {
+        return;
+    }
+
+    // CSRF 保护（如果失败，security->protect() 会自动 goBack 重定向）
+    $archive->security->protect();
+
+    if ($row['password'] === $password) {
+        // 密码正确：设置 cookie + 重定向回原页面（GET 请求会显示内容）
+        Typecho_Cookie::set('protectPassword_' . $cid, $password);
+        $archive->response->goBack();
+    } else {
+        // 密码错误：重定向到带 pwdError=1 的 URL，让主题密码框显示友好提示
+        $archive->response->goBack('?pwdError=1');
+    }
+};
+
+/**
  * 初始化主题
  */
 function themeInit($archive)
