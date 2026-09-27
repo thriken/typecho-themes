@@ -185,3 +185,132 @@
         'background:#0ea5e9;color:white;padding:2px 6px;border-radius:3px 0 0 3px;',
         'background:#0284c7;color:white;padding:2px 6px;border-radius:0 3px 3px 0;');
 })();
+
+/**
+ * 加密文章密码提交 - AJAX 验证 + Popup 提示（页面不刷新）
+ */
+(function() {
+    'use strict';
+
+    // 顶部居中 Popup（自动消失）
+    var popupTimer = null;
+
+    function showPopup(message) {
+        var popup = document.getElementById('cb-pwd-popup');
+        if (!popup) {
+            popup = document.createElement('div');
+            popup.id = 'cb-pwd-popup';
+            popup.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-16px);'
+                + 'z-index:10000;opacity:0;transition:opacity .25s ease,transform .25s ease;pointer-events:none';
+            document.body.appendChild(popup);
+        }
+        popup.innerHTML =
+            '<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:#fff;'
+            + 'border:1px solid #fecaca;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);'
+            + 'color:#dc2626;font-size:14px;font-weight:500;white-space:nowrap">'
+            + '<i class="fas fa-circle-exclamation" style="font-size:16px"></i>'
+            + '<span></span></div>';
+        // 用 textContent 赋值，避免转义问题
+        popup.querySelector('span').textContent = message;
+
+        requestAnimationFrame(function() {
+            popup.style.opacity = '1';
+            popup.style.transform = 'translateX(-50%) translateY(0)';
+        });
+
+        clearTimeout(popupTimer);
+        popupTimer = setTimeout(hidePopup, 3000);
+    }
+
+    function hidePopup() {
+        var popup = document.getElementById('cb-pwd-popup');
+        if (!popup) return;
+        popup.style.opacity = '0';
+        popup.style.transform = 'translateX(-50%) translateY(-16px)';
+    }
+
+    function initPwdForm() {
+        var form = document.querySelector('form[data-pwd-form]');
+        if (!form) return;
+
+        // 规避浏览器自动保存密码：输入框伪装为 type=text + CSS 圆点
+        // 不支持 text-security 的老浏览器退化为原生密码框（new-password 避免强弹保存）
+        var masked = form.querySelector('input[name="protectPassword"]');
+        if (masked) {
+            var ts = getComputedStyle(masked).webkitTextSecurity;
+            if (!ts || ts === 'none') {
+                masked.type = 'password';
+                masked.setAttribute('autocomplete', 'new-password');
+            }
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            var input = form.querySelector('input[name="protectPassword"]');
+            var btn = form.querySelector('button[type="submit"]');
+
+            if (!input || !input.value) {
+                showPopup('请输入访问密码');
+                if (input) input.focus();
+                return;
+            }
+
+            var originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '验证中...';
+            }
+
+            var data = new FormData(form);
+            // ajax=1 放 URL query，确保服务端能从 $_GET 可靠识别
+            var url = form.action + (form.action.indexOf('?') === -1 ? '?' : '&') + 'ajax=1';
+
+            fetch(url, {
+                method: 'POST',
+                body: data,
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function(r) {
+                var ct = r.headers.get('content-type') || '';
+                // 非 JSON 响应：服务端未进入 AJAX 分支（多为已设 cookie 后发生重定向）
+                // 降级为刷新页面，由服务端渲染：密码正确即解锁，错误则显示内联提示
+                if (ct.indexOf('application/json') === -1) {
+                    window.location.reload();
+                    return null;
+                }
+                return r.json();
+            })
+            .then(function(res) {
+                if (!res) return;   // 已走降级刷新
+                if (res.success) {
+                    // 密码正确：cookie 已设置，刷新后内容正常显示
+                    window.location.reload();
+                    return;
+                }
+                // 密码错误：弹 Popup，停留当前页
+                showPopup(res.message || '密码错误，请重试');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+                input.value = '';
+                input.focus();
+            })
+            .catch(function() {
+                showPopup('网络错误，请重试');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPwdForm);
+    } else {
+        initPwdForm();
+    }
+})();

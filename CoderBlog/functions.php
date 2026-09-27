@@ -61,11 +61,35 @@ Typecho_Plugin::factory('Widget_Archive')->handleInit = function ($archive, $sel
     // CSRF 保护（如果失败，security->protect() 会自动 goBack 重定向）
     $archive->security->protect();
 
+    // 是否 AJAX 请求（前端 fetch 提交：URL 带 ajax=1，或 X-Requested-With 头）
+    // 注意：优先读 $_GET，因为 request->get() 未必能可靠读到 POST body 的参数
+    $isAjax = (isset($_GET['ajax']) && $_GET['ajax'] === '1')
+        || ($archive->request->get('ajax') === '1')
+        || (isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
     if ($row['password'] === $password) {
-        // 密码正确：设置 cookie + 重定向回原页面（GET 请求会显示内容）
+        // 密码正确：设置 cookie（之后请求 hidden 为 false，内容正常显示）
         Typecho_Cookie::set('protectPassword_' . $cid, $password);
+
+        if ($isAjax) {
+            // AJAX：返回 JSON，由前端刷新进入内容，不跳转
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => true], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        // 非 AJAX：重定向回原页面（GET 请求会显示内容）
         $archive->response->goBack();
     } else {
+        if ($isAjax) {
+            // AJAX：返回 JSON 错误信息，前端弹 Popup，页面不刷新
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => false,
+                'message' => '密码错误，请重试'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
         // 密码错误：重定向到带 pwdError=1 的 URL，让主题密码框显示友好提示
         $archive->response->goBack('?pwdError=1');
     }

@@ -29,11 +29,16 @@ if ($this->hidden): ?>
                     </span>
                 </div>
                 <?php endif; ?>
-                <form method="post" action="<?php echo $this->security->getTokenUrl($this->permalink); ?>" class="max-w-sm mx-auto">
+                <form method="post" action="<?php echo $this->security->getTokenUrl($this->permalink); ?>" class="max-w-sm mx-auto" data-pwd-form autocomplete="off">
                     <input type="hidden" name="protectCID" value="<?php $this->cid(); ?>">
                     <div class="flex gap-2">
-                        <input type="password" name="protectPassword" placeholder="请输入访问密码" required
-                               class="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition text-sm">
+                        <input type="text" name="protectPassword" placeholder="请输入访问密码" required
+                               autocomplete="off"
+                               data-lpignore="true"
+                               data-1p-ignore
+                               data-bw-ignore
+                               class="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition text-sm"
+                               style="-webkit-text-security: disc; text-security: disc;">
                         <button type="submit"
                                 class="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors text-sm whitespace-nowrap">
                             验证
